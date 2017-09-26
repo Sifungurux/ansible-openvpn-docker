@@ -1,0 +1,63 @@
+---
+# Openvpn configuration Debian
+openvpn_dir: /etc/openvpn
+
+# Easy-rsa configuration
+easy_rsa_dir: /usr/share/easy-rsa
+#easy_rsa_dir: "{{ openvpn_dir }}/easy-rsa"
+easy_rsa_keys:
+        country: "US"
+        province: "CA"
+        city: "SanFrancisco"
+        organization: "Fort-Funston"
+        email: "me@myhost.mydomain"
+        organizational_unit: "MyOrganizationalUnit"
+        common_name: VPN
+        name: VPN certificates
+        alt_name: .
+        
+        # Certification settings
+        size: 1024 # Entropy
+        ca_expire: 3650 # 10 years
+        key_expire: 3650 # 10 years
+        tls_auth: True
+        
+easy_rsa_cert_dir: "{{ openvpn_dir }}/certs"
+easy_rsa_ca_key_file: "{{ easy_rsa_cert_dir }}/ca.key"
+easy_rsa_ca_crt_file: "{{ easy_rsa_cert_dir }}/ca.crt"
+easy_rsa_server_key_file: "{{ easy_rsa_cert_dir }}/{{ openvpn_server_name }}.key"
+easy_rsa_server_crt_file: "{{ easy_rsa_cert_dir }}/{{ openvpn_server_name }}.crt"
+easy_rsa_ta_crt_file: "{{ easy_rsa_cert_dir }}/ta.key"
+easy_rsa_dh_file: "{{ easy_rsa_cert_dir }}/dh{{dhprimes_bit}}.pem"
+easy_rsa_client_dir: "{{ openvpn_dir }}/clients"
+
+# Server.conf configuration
+local: false
+port: 1194
+proto: udp
+connection_proto: tun
+vpn_network: 192.168.30.0
+vpn_subnet: 255.255.255.240
+server_bridge: false
+
+push_route: false #Add route with - {net: 10.20.30.40, subnet: 255.255.255.240}
+
+client_static_config: false
+script_file: false
+redirect_gateway: false
+push_dns: false # Add dns servers ip for usages
+client_to_client: false
+duplicate_cn: false
+keepalive: true
+cipher: "cipher AES-256-CBC"
+comp_lzo: true
+max_clients: false
+openvpn_user_group: false
+persist: false
+openvpn_log: true
+verbose: 3
+mute: false
+
+# Client.conf configuration
+connection_type: tun
+remote_server: 192.168.77.200

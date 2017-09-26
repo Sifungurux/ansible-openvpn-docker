@@ -1,0 +1,70 @@
+---
+
+- name: Include variables
+  vars: 
+  include_vars:
+    file: defaults/main.yml
+
+- name: Installere openvpn til sidste version
+  apt:
+    pkg: openvpn
+    state: latest
+    update_cache: yes
+
+- name: Create easy-rsa folder
+  file:
+    path: "{{ openvpn_dir }}/{{ item }}"
+    state: directory
+    mode: 0700
+  with_items:
+    - certs
+    - clients
+
+- copy:
+    src: scripts/setup
+    dest: /usr/local/bin/setup
+    owner: root
+    group: root
+    mode: 0700
+
+- name: Facts.d directory
+  file:
+    path: /etc/ansible/facts.d
+    state: directory
+    mode: 0700
+
+- uri:
+    url: https://ipinfo.io/ip
+    method: GET
+    return_content: yes
+  register: public_ip
+
+- debug: var=public_ip
+
+- name: Server remote IP
+  template:
+    src: templates/server_ip.j2
+    dest: /etc/ansible/facts.d/server.fact
+    mode: 0644
+  when: local == false
+
+
+- debug: var=remote_ip
+
+
+- name: Running server script
+  template:
+    src: templates/ovpn.j2
+    dest: /usr/local/bin/ovpn
+    mode: 0755
+
+- name: Clients script
+  template:
+    src: templates/add_client.j2
+    dest: /usr/local/bin/addclient
+    mode: 0700
+
+- name: Server configuration file
+  template:
+          src=templates/server.conf.j2
+          dest="{{ openvpn_dir }}/server.conf"

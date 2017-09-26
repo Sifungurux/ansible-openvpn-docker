@@ -1,0 +1,95 @@
+{% if local != true %}
+local {{ ansible_eth0.ipv4.address }}
+{% else  %}
+local {{ remote_ip }}
+{% endif %}
+port {{ port }}
+proto {{ proto }}
+dev {{ connection_proto }}
+{%- if ansible_os_family == "Windows" -%}
+dev-node MyTap
+{%- endif %}
+
+ca {{ easy_rsa_cert_dir}}/ca.crt
+cert {{ easy_rsa_cert_dir }}/{{ easy_rsa_keys.common_name }}.crt
+key {{ easy_rsa_cert_dir }}/{{ easy_rsa_keys.common_name }}.key  # This file should be kept secret
+
+dh {{ easy_rsa_cert_dir }}/dh1024.pem
+{% if server_bridge %}
+server-bridge 10.8.0.4 255.255.255.0 10.8.0.50 10.8.0.100
+{% else %}
+server {{vpn_network}} {{vpn_subnet}}
+{% endif %}
+ifconfig-pool-persist ipp.txt
+{% if push_route %}
+	{% for route in push_route %}
+push "route {{route.net}} {{route.subnet}}"
+	{% endfor %}
+{% endif %}
+{% if client_static_config %}
+client-config-dir ccd
+	{%- for client_config in client_static_config %}
+route {{ net }} {{ subnet }}
+#	{% endfor %}
+# Then create a file ccd/<client> with this line
+# for client private subnet:
+#   iroute 192.168.40.128 255.255.255.248
+#
+# Suppose you want to give
+# client a fixed VPN IP address of 10.9.0.1.
+# Then add this line to ccd/<client>:
+#   ifconfig-push 10.9.0.1 10.9.0.2
+#
+{% endif %}
+{% if script_file %}
+learn-address ./{{ script_file  }}
+{% endif %}
+{% if redirect_gateway %}
+push "redirect-gateway def1 bypass-dhcp"
+{% endif %}
+
+{% if push_dns %}
+	{% for dns in push_dns %}
+push " dhcp-option DNS {{ DNS }}
+	{% endfor %}	
+{% endif %}
+{% if client_to_client %}
+client-to-client
+{% endif %}
+{% if duplicate_cn %}
+duplicate-cn
+{% endif %}
+{% if keepalive %}
+keepalive 10 120
+{% endif %}
+{% if easy_rsa_keys.tls_auth %}
+tls-auth {{ easy_rsa_cert_dir }}/ta.key 0 # This file is secret
+{% endif %}
+{% if cipher %}
+cipher AES-256-CBC   # AES 256
+{% endif %}
+{% if comp_lzo %}
+comp-lzo
+{% endif %}
+{% if max_clients %}
+max-clients 100
+{% endif %}
+{% if openvpn_user_group %}
+user nobody
+group nogroup
+{% endif %}
+{% if persist %}
+persist-key
+persist-tun
+{% endif %}
+{% if openvpn_log %}
+log         openvpn.log
+log-append  openvpn.log
+{% endif %}
+{% if verbose %}
+verb 3
+{% endif %}
+{% if mute %}
+mute 20
+{% endif %}
+

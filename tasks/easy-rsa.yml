@@ -1,0 +1,50 @@
+---
+
+- name: Certificate file check
+  stat: 
+    path: "{{ openvpn_dir }}/certs/dh{{ easy_rsa_keys.size }}.pem"
+  register: certs_build
+
+- name: vars configuraion
+  template:
+    src=templates/vars.j2
+    dest="{{ easy_rsa_dir }}/vars"
+
+- name: Setting up certs folder
+  file: 
+    path: "{{ easy_rsa_cert_dir }}/index.txt"
+    owner: root
+    group: root
+    mode: 600
+    state: touch
+  when: certs_build.stat.exists == False
+
+- name: Cert serial
+  shell: "echo 01 > {{ easy_rsa_cert_dir }}/serial"
+  when: certs_build.stat.exists == False
+
+- name: Build CA Certificate
+  shell: "source vars && {{ item }}"
+  args:
+    chdir: "{{ easy_rsa_dir }}"
+    executable: /bin/bash
+  with_items:
+    - "./pkitool --initca"
+    - "./pkitool --server {{ easy_rsa_keys.common_name }}"
+    - "./build-dh"
+  when: certs_build.stat.exists == False
+
+- name: Ta.key file check
+  stat: 
+    path: "{{ openvpn_dir }}/certs/ta.key"
+  register: ta
+
+- name: Generate tls-auth key for added security
+  shell: openvpn --genkey --secret ta.key
+  args:
+    chdir: "{{ easy_rsa_cert_dir }}"
+    executable: /bin/bash
+  when: 
+    - easy_rsa_keys.tls_auth == True
+    - ta.stat.exists == False
+

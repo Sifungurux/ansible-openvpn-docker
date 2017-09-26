@@ -1,0 +1,42 @@
+client
+dev {{ connection_type }}
+{% if easy_rsa_keys.tls_auth %}
+proto udp
+{% else %}
+proto {{ proto }}
+{% endif %}
+{% if local == false %}
+remote {{ ansible_local.server.remote_ip }} {{ port }}
+{% elif local == true %}
+remote {{ ansible_default_ipv4.address }} {{ port }}
+{% else %}
+remote {{ local }} {{ port }}
+{% endif %}
+{% if openvpn_user_group %}
+# Downgrade privileges after initialization (non-Windows only)
+user nobody
+group nobody
+{% endif %}
+# Try to preserve some state across restarts.
+{% if persist %}
+persist-key
+persist-tun
+{% endif %}
+ca ca.crt
+cert {{ client }}.crt
+key {{ client }}.key
+remote-cert-tls server
+{% if easy_rsa_keys.tls_auth %}
+tls-auth ta.key 1
+{% endif %}
+cipher AES-256-CBC
+{% if comp_lzo %}
+comp-lzo
+{% endif %}
+# Set log file verbosity.
+verb {{ verbose }}
+{% if mute %}
+# Silence repeating messages
+mute 20
+{% endif %}
+

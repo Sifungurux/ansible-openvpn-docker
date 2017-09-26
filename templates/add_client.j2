@@ -1,0 +1,25 @@
+#!/bin/bash
+
+CLIENT=$1
+CLIENTLIST={{ openvpn_dir }}/clients/client_user.list
+
+if [[ -n $CLIENT ]]; then
+    if grep -Fxq "${CLIENT}" $CLIENTLIST
+    then
+        echo "User already exsist. Please use another username!"
+        exit 1
+    else
+        echo $CLIENT >> $CLIENTLIST
+        ansible-playbook /opt/ansible/tasks/add_clients.yml -i 'localhost,' --connection=local -e "user=${CLIENT}"
+    fi
+elif [[ -f $CLIENTLIST ]]; then
+    for USERS in `cat $CLIENTLIST`;
+    do
+        echo $USERS
+        ansible-playbook /opt/ansible/tasks/add_clients.yml -i 'localhost,' --connection=local -e "user=${USERS}"
+    done
+else
+    echo "add_clients [client]. Default with no params is to look at client_user.list for adding multiple users at onece"
+    exit 1
+fi
+

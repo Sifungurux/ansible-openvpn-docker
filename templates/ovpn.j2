@@ -1,0 +1,15 @@
+#!/bin/bash
+
+if [ "$DEBUG" == "1" ]; then
+  set -x
+fi
+
+mkdir -p /dev/net
+if [ ! -c /dev/net/tun ]; then
+    mknod /dev/net/tun c 10 200
+fi
+
+echo "Running openvpn"
+/etc/init.d/openvpn start
+/etc/init.d/openvpn status
+exec /bin/bash
