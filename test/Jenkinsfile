@@ -13,6 +13,7 @@ def isPublishingBranch = { ->
 
 def slackNotificationChannel = 'jenkins'
 def notifySlack(text, channel, attachments) {
+    // Edit the slackURL to match your settings
     def slackURL = 'https://hooks.slack.com/services/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'
     def jenkinsIcon = 'https://wiki.jenkins-ci.org/download/attachments/2916393/logo.png'
 
@@ -94,7 +95,8 @@ pipeline {
        }
        stage ('Clone/build/Run'){
            steps {
-                git credentialsId: '055739b4-29e7-40f2-abb9-c1354b359094', url: 'git@github.com:Sifungurux/openVPN.git'
+		// Change this line to match your repo
+                git credentialsId: '055739b4-29e7-40f2-abb9-c1354b359094', url: 'git@github.com:Sifungurux/ansible-openvpn-docker.git'
                 sh ('docker build -t jenkins/openvpn-auto .')
         	sh ('docker create -v /etc/openvpn/certs -v /etc/openvpn/clients --name ovpn_datacontainer alpine')
             
