@@ -41,11 +41,10 @@ vpn_subnet: 255.255.255.240
 server_bridge: false
 
 push_route: false #Add route with - {net: 10.20.30.40, subnet: 255.255.255.240}
-
+push_dhcp_options: false #Add options with - {type: DNS , ip: 10.20.30.1}
 client_static_config: false
 script_file: false
 redirect_gateway: false
-push_dns: false # Add dns servers ip for usages
 client_to_client: false
 duplicate_cn: false
 keepalive: true

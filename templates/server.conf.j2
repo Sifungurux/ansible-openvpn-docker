@@ -20,17 +20,17 @@ server-bridge 10.8.0.4 255.255.255.0 10.8.0.50 10.8.0.100
 {% else %}
 server {{vpn_network}} {{vpn_subnet}}
 {% endif %}
-ifconfig-pool-persist ipp.txt
+ifconfig-pool-persist configs/ipp.txt
 {% if push_route %}
-	{% for route in push_route %}
+{% for route in push_route %}
 push "route {{route.net}} {{route.subnet}}"
-	{% endfor %}
+{% endfor %}
 {% endif %}
 {% if client_static_config %}
-client-config-dir ccd
-	{%- for client_config in client_static_config %}
+client-config-dir configs/ccd
+{%- for client_config in client_static_config %}
 route {{ net }} {{ subnet }}
-#	{% endfor %}
+{% endfor %}
 # Then create a file ccd/<client> with this line
 # for client private subnet:
 #   iroute 192.168.40.128 255.255.255.248
@@ -48,10 +48,10 @@ learn-address ./{{ script_file  }}
 push "redirect-gateway def1 bypass-dhcp"
 {% endif %}
 
-{% if push_dns %}
-	{% for dns in push_dns %}
-push " dhcp-option DNS {{ DNS }}
-	{% endfor %}	
+{% if push_dhcp_options %}
+{% for push in push_dhcp_options  %}
+push "dhcp-option {{ push.type }} {{ push.ip }}"
+{% endfor %}	
 {% endif %}
 {% if client_to_client %}
 client-to-client
@@ -72,7 +72,7 @@ cipher AES-256-CBC   # AES 256
 comp-lzo
 {% endif %}
 {% if max_clients %}
-max-clients 100
+max-clients {{ max_clients }}
 {% endif %}
 {% if openvpn_user_group %}
 user nobody

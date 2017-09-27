@@ -10,7 +10,7 @@ remote {{ ansible_local.server.remote_ip }} {{ port }}
 {% elif local == true %}
 remote {{ ansible_default_ipv4.address }} {{ port }}
 {% else %}
-remote {{ local }} {{ port }}
+remote {{ remote_server }} {{ port }}
 {% endif %}
 {% if openvpn_user_group %}
 # Downgrade privileges after initialization (non-Windows only)

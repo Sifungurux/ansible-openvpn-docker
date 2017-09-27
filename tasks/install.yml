@@ -11,7 +11,7 @@
     state: latest
     update_cache: yes
 
-- name: Create easy-rsa folder
+- name: Create folder
   file:
     path: "{{ openvpn_dir }}/{{ item }}"
     state: directory
@@ -19,6 +19,7 @@
   with_items:
     - certs
     - clients
+    - configs
 
 - copy:
     src: scripts/setup
@@ -66,5 +67,5 @@
 
 - name: Server configuration file
   template:
-          src=templates/server.conf.j2
-          dest="{{ openvpn_dir }}/server.conf"
+          src=templates/servers.conf.j2
+          dest="{{ openvpn_dir }}/config/server.conf"
