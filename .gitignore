@@ -3,3 +3,6 @@ openvpn.retry
 */*.retry
 Build_clients.retry
 test_user.file
+tests/.cache/
+tests/__pycache__/
+tests/testcase.py

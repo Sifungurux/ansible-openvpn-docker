@@ -1,7 +1,4 @@
 ---
-# Openvpn configuration Debian
-openvpn_dir: /etc/openvpn
-
 # Easy-rsa configuration
 easy_rsa_dir: /usr/share/easy-rsa
 #easy_rsa_dir: "{{ openvpn_dir }}/easy-rsa"
@@ -22,14 +19,6 @@ easy_rsa_keys:
         key_expire: 3650 # 10 years
         tls_auth: True
         
-easy_rsa_cert_dir: "{{ openvpn_dir }}/certs"
-easy_rsa_ca_key_file: "{{ easy_rsa_cert_dir }}/ca.key"
-easy_rsa_ca_crt_file: "{{ easy_rsa_cert_dir }}/ca.crt"
-easy_rsa_server_key_file: "{{ easy_rsa_cert_dir }}/{{ openvpn_server_name }}.key"
-easy_rsa_server_crt_file: "{{ easy_rsa_cert_dir }}/{{ openvpn_server_name }}.crt"
-easy_rsa_ta_crt_file: "{{ easy_rsa_cert_dir }}/ta.key"
-easy_rsa_dh_file: "{{ easy_rsa_cert_dir }}/dh{{dhprimes_bit}}.pem"
-easy_rsa_client_dir: "{{ openvpn_dir }}/clients"
 
 # Server.conf configuration
 local: false
