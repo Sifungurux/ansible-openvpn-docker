@@ -11,3 +11,11 @@ before_install:
   - sudo apt-get update
   - sudo apt-get -y install docker-ce
   - docker ps -a
+jobs:
+  include:
+    - stage: deploy
+      - docker build -t sifungurx/openvpn .
+      - docker create -v /etc/openvpn/certs -v /etc/openvpn/clients --name ovpn_datacontainer alpine
+      - docker run -itd --volumes-from ovpn_datacontainer --name openvpn_test --privileged --cap-add=NET_ADMIN sifungurx/openvpn setup
+    - stage: test
+      - docker exec -i openvpn_test /etc/init.d/openvpn status"
