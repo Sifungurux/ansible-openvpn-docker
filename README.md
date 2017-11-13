@@ -2,6 +2,8 @@
 **Configurating docker contained vpn server 
 with a docker contained data container** 
 
+[![Build Status](https://travis-ci.org/Sifungurux/ansible-openvpn-docker.svg?branch=master)](https://travis-ci.org/Sifungurux/ansible-openvpn-docker)
+
 Container is configured with ansible that at run time configure a openvpn
  service. Configuraion of the services is done in the default folder in the
 main.yml file.
