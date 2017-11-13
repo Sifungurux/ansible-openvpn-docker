@@ -16,8 +16,8 @@ jobs:
     - stage: deploy
       script:
         - docker build -t sifungurx/openvpn -f tests/Dockerfile .
-        #- docker create -v /etc/openvpn/certs -v /etc/openvpn/clients --name ovpn_datacontainer alpine
-        #- docker run -itd --volumes-from ovpn_datacontainer --name openvpn_test --privileged --cap-add=NET_ADMIN sifungurx/openvpn setup
-    #- stage: test
-      #script:
-        #- docker exec -i openvpn_test /etc/init.d/openvpn status"
+        - docker create -v /etc/openvpn/certs -v /etc/openvpn/clients --name ovpn_datacontainer alpine
+        - docker run -itd --volumes-from ovpn_datacontainer --name openvpn_test --privileged --cap-add=NET_ADMIN sifungurx/openvpn setup
+    - stage: test
+      script:
+        - docker exec -i openvpn_test /etc/init.d/openvpn status"
