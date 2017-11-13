@@ -97,9 +97,11 @@ pipeline {
            steps {
 		// Change this line to match your repo
                 git credentialsId: '055739b4-29e7-40f2-abb9-c1354b359094', url: 'git@github.com:Sifungurux/ansible-openvpn-docker.git'
-                sh ('docker build -t jenkins/openvpn-auto .')
-        	sh ('docker create -v /etc/openvpn/certs -v /etc/openvpn/clients --name ovpn_datacontainer alpine')
-            
+                sh 'docker build -t jenkins/openvpn-auto . || true'
+		junit '**/target/*.xml'
+        	sh 'docker create -v /etc/openvpn/certs -v /etc/openvpn/clients --name ovpn_datacontainer alpine || true'
+                junit '**/target/*.xml'
+		   
                 script {
                     populateGlobalVariables()
                     def buildColor = currentBuild.result == null ? "good" : "warning"
