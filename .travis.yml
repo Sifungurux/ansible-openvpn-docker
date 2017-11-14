@@ -4,17 +4,11 @@ language: bash
 
 services:
   - docker
-  
-#before_install:
-# - curl -fsSL https://download.docker.com/linux/ubuntu/gpg | sudo apt-key add -
-# - sudo add-apt-repository "deb [arch=amd64] https://download.docker.com/linux/ubuntu $(lsb_release -cs) stable"
-# - sudo apt-get update
-# - sudo apt-get -y install docker-ce
-# - docker ps -a
-  
+   
 script:
    - docker build -t sifungurx/openvpn -f tests/Dockerfile .
-   - docker create -v /etc/openvpn/certs -v /etc/openvpn/clients --name ovpn_datacontainer alpine
+   - docker create -v /etc/openvpn/clients --name client_datacontainer alpine
+   - docker create -v /etc/openvpn/certs --volumes-from client_datacontainer --name ovpn_datacontainer alpine
    - docker run -itd --volumes-from ovpn_datacontainer --name openvpn_test --privileged --cap-add=NET_ADMIN sifungurx/openvpn setup
       
    - docker ps | grep sifungurx/openvpn
