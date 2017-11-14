@@ -14,12 +14,14 @@ Service will run when container is run. Data will be storage in a persistant
  data storage in a container.
 
 Build the docker images to customize it or pull from docker.hub
-`docker build -t <name> .`
+
+`docker build -t jkp/ovpn -f tests/Dockerfile .`
 
 
-Firstly, build the container that will hold the data
+Then create the data containers. One containing the the client certs and config and a client/server build the container containing cert data and the data from the client container
+`docker create -v /etc/openvpn/certs --name client_datacontainer alpine')`
 
-`docker create -v /etc/openvpn/certs -v /etc/openvpn/clients -v /etc/openvpn/config --name ovpn_datacontainer alpine')`
+`docker create -v /etc/openvpn/certs -volumes-from client_datacontainer --name ovpn_datacontainer alpine')`
 
 1. Certs
 	Contains server certificates.
@@ -27,7 +29,7 @@ Firstly, build the container that will hold the data
 	Containing the client configurations and certs. Archived and compressed. 
 	Supporsed to be share with a samba controlled share to allow users download own configurations.
 3. Config 
-	Server configurations. Server.conf and server related configurations files. Ipp.txt and client IP configurations.
+	Server configurations. Server.conf and server related configurations files. Ipp.txt and client IP configurations. Not yet implemented
 
 Next run/build the container
 
