@@ -67,5 +67,5 @@
 
 - name: Server configuration file
   template:
-          src=templates/servers.conf.j2
-          dest="{{ openvpn_dir }}/config/server.conf"
+    src=templates/server.conf.j2
+    dest="{{ openvpn_dir }}/server.conf"

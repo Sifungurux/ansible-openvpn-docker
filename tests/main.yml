@@ -3,4 +3,4 @@
   become: yes
   become_method: sudo
   roles:
-          - { role: ../../openvpn }
+          - { role: ../onsible-openvpn-docker }
