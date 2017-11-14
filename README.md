@@ -19,6 +19,7 @@ Build the docker images to customize it or pull from docker.hub
 
 
 Then create the data containers. One containing the the client certs and config and a client/server build the container containing cert data and the data from the client container
+
 `docker create -v /etc/openvpn/certs --name client_datacontainer alpine')`
 
 `docker create -v /etc/openvpn/certs -volumes-from client_datacontainer --name ovpn_datacontainer alpine')`
