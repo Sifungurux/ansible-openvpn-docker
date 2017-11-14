@@ -47,5 +47,6 @@ verbose: 3
 mute: false
 
 # Client.conf configuration
+openvpn_clients: []
 connection_type: tun
 remote_server: 192.168.77.200

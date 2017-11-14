@@ -5,5 +5,5 @@ echo "### Configuring openvpn server ###"
 [ "$(ls -A /opt/ansible)" ] && \
 	git pull || \
 	git clone https://github.com/Sifungurux/ansible-openvpn-docker.git .
-ansible-playbook main.yml -i 'localhost,' --connection=local
+ansible-playbook tests/main.yml -i 'localhost,' --connection=local
 ovpn
