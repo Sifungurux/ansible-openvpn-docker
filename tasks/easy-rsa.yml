@@ -4,11 +4,15 @@
   stat: 
     path: "{{ openvpn_dir }}/certs/dh{{ easy_rsa_keys.size }}.pem"
   register: certs_build
+  tags:
+    - cert_config
 
 - name: vars configuraion
   template:
     src=templates/vars.j2
     dest="{{ easy_rsa_dir }}/vars"
+  tags:
+    - cert_config
 
 - name: Setting up certs folder
   file: 
@@ -18,10 +22,14 @@
     mode: 600
     state: touch
   when: certs_build.stat.exists == False
+  tags:
+    - cert_config
 
 - name: Cert serial
   shell: "echo 01 > {{ easy_rsa_cert_dir }}/serial"
   when: certs_build.stat.exists == False
+  tags:
+    - cert_config
 
 - name: Build CA Certificate
   shell: "source vars && {{ item }}"
@@ -33,11 +41,15 @@
     - "./pkitool --server {{ easy_rsa_keys.common_name }}"
     - "./build-dh"
   when: certs_build.stat.exists == False
+  tags:
+    - cert_config
 
 - name: Ta.key file check
   stat: 
     path: "{{ openvpn_dir }}/certs/ta.key"
   register: ta
+  tags:
+    - cert_config
 
 - name: Generate tls-auth key for added security
   shell: openvpn --genkey --secret ta.key
@@ -47,4 +59,6 @@
   when: 
     - easy_rsa_keys.tls_auth == True
     - ta.stat.exists == False
+  tags:
+    - cert_config
 

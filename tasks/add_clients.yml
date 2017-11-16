@@ -1,11 +1,6 @@
 ---
-- hosts: localhost
-  become: yes
-  become_method: sudo
-  gather_facts: yes
   vars:
     client: "{{ user }}"
-  tasks:
   
   - name: Include variables
     include_vars:

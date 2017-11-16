@@ -10,6 +10,8 @@
     pkg: openvpn
     state: latest
     update_cache: yes
+  tags:
+    - install
 
 - name: Create folder
   file:
@@ -20,6 +22,8 @@
     - certs
     - clients
     - configs
+  tags:
+    - install
 
 - copy:
     src: scripts/setup
@@ -27,20 +31,24 @@
     owner: root
     group: root
     mode: 0700
+  tags:
+    - install
 
 - name: Facts.d directory
   file:
     path: /etc/ansible/facts.d
     state: directory
     mode: 0700
+  tags:
+    - install
 
 - uri:
     url: https://ipinfo.io/ip
     method: GET
     return_content: yes
   register: public_ip
-
-- debug: var=public_ip
+  tags:
+    - install
 
 - name: Server remote IP
   template:
@@ -48,24 +56,29 @@
     dest: /etc/ansible/facts.d/server.fact
     mode: 0644
   when: local == false
-
-
-- debug: var=remote_ip
-
+  tags:
+    - install
 
 - name: Running server script
   template:
     src: templates/ovpn.j2
     dest: /usr/local/bin/ovpn
     mode: 0755
+  tags:
+    - install
 
 - name: Clients script
   template:
     src: templates/add_client.j2
     dest: /usr/local/bin/addclient
     mode: 0700
+  tags:
+    - install
 
 - name: Server configuration file
   template:
     src=templates/server.conf.j2
     dest="{{ openvpn_dir }}/server.conf"
+  tags:
+    - install
+

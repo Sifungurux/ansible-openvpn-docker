@@ -3,4 +3,4 @@
   become: yes
   become_method: sudo
   roles:
-          - ansible-openvpn-docker
+          - { role: ansible-openvpn-docker, tags: [ 'install', 'cert_config' ] }
