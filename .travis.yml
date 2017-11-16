@@ -9,8 +9,7 @@ script:
    - docker build -t sifungurx/openvpn -f tests/Dockerfile .
    - docker create -v /etc/openvpn/clients --name client_datacontainer alpine
    - docker create -v /etc/openvpn/certs --volumes-from client_datacontainer --name ovpn_datacontainer alpine
-   - docker run -it --volumes-from ovpn_datacontainer --name openvpn_test --privileged --cap-add=NET_ADMIN sifungurx/openvpn setup
-   - exit
+   - docker run -it --volumes-from ovpn_datacontainer --name openvpn_test --privileged --cap-add=NET_ADMIN sifungurx/openvpn setup && exit
    - docker start openvpn_test
    
    - docker ps | grep sifungurx/openvpn
