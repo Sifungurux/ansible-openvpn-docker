@@ -10,47 +10,62 @@
   - name: Include variables
     include_vars:
           file: ../defaults/main.yml
+    tags:
+      - add-client
  
   - name: Checking for client configs
     stat:
       path: "{{ openvpn_dir }}/clients/{{ client }}/{{ client }}.tar.gz"
     register: check_clients_config
-
+    tags: 
+      - add-client
+  
   - name: Create client folder
     file:
       path: "{{ openvpn_dir }}/clients/{{ client }}"
       state: directory
       mode: 0700
-    
+    tags:
+      - add-client  
+  
   - name: Generate client certification
     shell: "source vars && ./pkitool {{ client }}"
     when: not check_clients_config.stat.exists
     args:
       chdir: "{{ easy_rsa_dir }}"     
       executable: /bin/bash
+    tags:
+      - add-client
   
   - name: Generate client configuration
     template:
       src=../templates/client.conf.j2
       dest="{{ easy_rsa_client_dir }}/{{ client }}/client.conf"
     when: not check_clients_config.stat.exists
-
+    tags:
+      - add-client
+      
   - name: Create client openvpn zip package, archive it and deletes folder
     shell: "mv certs/{{ client }}.key clients/{{ client }}/. && mv certs/{{ client }}.crt clients/{{ client }}/. && cp certs/ca.crt clients/{{ client }}/." 
     when: not check_clients_config.stat.exists
     args:
       chdir: "{{ openvpn_dir }}"
-
+    tags:
+      - add-client
+      
   - name: Archive client configuration and certificates
     shell: "cp certs/ta.key clients/{{ client }}/."
     when: easy_rsa_keys.tls_auth == True
     args:
       chdir: "{{ openvpn_dir }}"
-
+    tags:
+      - add-client
+  
   - archive:
       path: "{{ easy_rsa_client_dir }}/{{ client }}"
       dest: "{{ easy_rsa_client_dir }}/{{ client }}/{{ client }}.tar.gz"
     when: not check_clients_config.stat.exists
-
+    tags:
+      - add-client
 
 
