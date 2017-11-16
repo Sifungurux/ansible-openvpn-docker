@@ -15,6 +15,6 @@ script:
    - docker ps | grep sifungurx/openvpn
    - docker images | grep sifungurx/openvpn
    
-   - docker exec -i openvpn_test /etc/init.d/openvpn status
+   - docker exec -i openvpn_test ls /usr/local/bin/
 
-   - docker exec -it openvpn_test addclient test1
+   #- docker exec -it openvpn_test addclient test1
