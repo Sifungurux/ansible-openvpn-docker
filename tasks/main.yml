@@ -1,6 +1,8 @@
 ---
 
 - include_tasks: install.yml
+  tags: ['install']
 - include_tasks: easy-rsa.yml
+  tags: ['cert_config']
 - include_tasks: add_clients.yml
-
+  tags: ['add_client']
