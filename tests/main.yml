@@ -1,6 +1,7 @@
 ---
 - hosts: all
+  tags: [ 'install', 'cert_config' ]
   become: yes
   become_method: sudo
   roles:
-          - { role: ansible-openvpn-docker, tags: [ 'install', 'cert_config' ] }
+          - ansible-openvpn-docker
