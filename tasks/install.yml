@@ -12,6 +12,7 @@
     update_cache: yes
   tags:
     - install
+    - docker
 
 - name: Create folder
   file:
