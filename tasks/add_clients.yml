@@ -1,6 +1,4 @@
 ---
-  vars:
-    client: "{{ user }}"
   
   - name: Include variables
     include_vars:
