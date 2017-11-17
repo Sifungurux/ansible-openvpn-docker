@@ -3,7 +3,7 @@ local {{ ansible_eth0.ipv4.address }}
 {% else  %}
 local {{ remote_ip }}
 {% endif %}
-port {{ port }}
+port {{ ovpn_port }}
 proto {{ proto }}
 dev {{ connection_proto }}
 {%- if ansible_os_family == "Windows" -%}

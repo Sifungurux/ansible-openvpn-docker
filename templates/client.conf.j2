@@ -6,11 +6,11 @@ proto udp
 proto {{ proto }}
 {% endif %}
 {% if local == false %}
-remote {{ ansible_local.server.remote_ip }} {{ port }}
+remote {{ ansible_local.server.remote_ip }} {{ ovpn_port }}
 {% elif local == true %}
-remote {{ ansible_default_ipv4.address }} {{ port }}
+remote {{ ansible_default_ipv4.address }} {{ ovpn_port }}
 {% else %}
-remote {{ remote_server }} {{ port }}
+remote {{ remote_server }} {{ ovpn_port }}
 {% endif %}
 {% if openvpn_user_group %}
 # Downgrade privileges after initialization (non-Windows only)

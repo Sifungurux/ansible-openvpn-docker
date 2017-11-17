@@ -22,7 +22,7 @@ easy_rsa_keys:
 
 # Server.conf configuration
 local: false
-port: 1194
+ovpn_port: 1194
 proto: udp
 connection_proto: tun
 vpn_network: 192.168.30.0
