@@ -19,7 +19,7 @@
       state: directory
       mode: 0700
     tags:
-      - add-client  
+       - add-client  
   
   - name: Generate client certification
     shell: "source vars && ./pkitool {{ client }}"
