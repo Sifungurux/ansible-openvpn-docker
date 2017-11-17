@@ -10,13 +10,14 @@ if [[ -n $CLIENT ]]; then
         exit 1
     else
         echo $CLIENT >> $CLIENTLIST
-        ansible-playbook /opt/ansible/tasks/add_clients.yml -i 'localhost,' --connection=local -e "user=${CLIENT}"
+        ansible-playbook /opt/ansible/tasks/add_clients.yml -i 'localhost,' --connection=local -e "user=${CLIENT}" --skip-tags "install, cert-config"
     fi
 elif [[ -f $CLIENTLIST ]]; then
     for USERS in `cat $CLIENTLIST`;
     do
         echo $USERS
-        ansible-playbook /opt/ansible/tasks/add_clients.yml -i 'localhost,' --connection=local -e "user=${USERS}"
+        ansible-playbook /opt/ansible/tasks/add_clients.yml -i 'localhost,' --connection=local -e "user=${USERS}" --skip-tag
+s "install, cert-config"
     done
 else
     echo "add_clients [client]. Default with no params is to look at client_user.list for adding multiple users at onece"
