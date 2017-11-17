@@ -10,7 +10,7 @@
     stat:
       path: "{{ openvpn_dir }}/clients/{{ client }}/{{ client }}.tar.gz"
     register: check_clients_config
-    tags: 
+    tags:
       - add-client
   
   - name: Create client folder
