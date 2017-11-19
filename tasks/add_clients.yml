@@ -18,8 +18,8 @@
       path: "{{ openvpn_dir }}/clients/{{ client }}"
       state: directory
       mode: 0700
-    tags:
-       - add-client  
+    tags:
+      - add-client  
   
   - name: Generate client certification
     shell: "source vars && ./pkitool {{ client }}"
