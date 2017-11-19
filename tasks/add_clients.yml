@@ -1,8 +1,9 @@
 ---
-  vars:
+ - name: includings vars
+   vars:
     client: "{{ user }}"
-  tags:
-    - add-client 
+   tags:
+     - add-client 
   
   - name: Include variables
     include_vars:
