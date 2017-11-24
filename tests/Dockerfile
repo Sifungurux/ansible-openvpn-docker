@@ -7,8 +7,9 @@ RUN echo "deb http://ppa.launchpad.net/ansible/ansible/ubuntu trusty main" >> /e
  apt-get install -y git ansible openvpn
 
 ADD scripts/setup /usr/local/bin/
-#RUN chmod 700 /usr/local/bin/setup
+RUN chmod 700 /usr/local/bin/setup
 
 EXPOSE 1194/tcp
 EXPOSE 1194/udp
-CMD ["setup"]
+CMD ["ovpn"]
+
