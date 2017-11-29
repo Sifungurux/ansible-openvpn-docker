@@ -1,17 +1,23 @@
 ---
   
-  - name: Include variables
+  - name: Include default variables
     include_vars:
           file: ../defaults/main.yml
     tags:
-      - add-client
+      - addclient
  
+  - name: Include vars variables
+    include_vars:
+          file: ../vars/main.yml
+    tags:
+      - addclient
+
   - name: Checking for client configs
     stat:
       path: "{{ openvpn_dir }}/clients/{{ client }}/{{ client }}.tar.gz"
     register: check_clients_config
     tags:
-      - add-client
+      - addclient
   
   - name: Create client folder
     file:
@@ -19,7 +25,7 @@
       state: directory
       mode: 0700
     tags:
-      - add-client  
+      - addclient  
   
   - name: Generate client certification
     shell: "source vars && ./pkitool {{ client }}"
@@ -28,7 +34,7 @@
       chdir: "{{ easy_rsa_dir }}"     
       executable: /bin/bash
     tags:
-      - add-client
+      - addclient
   
   - name: Generate client configuration
     template:
@@ -36,7 +42,7 @@
       dest="{{ easy_rsa_client_dir }}/{{ client }}/client.conf"
     when: not check_clients_config.stat.exists
     tags:
-      - add-client
+      - addclient
       
   - name: Create client openvpn zip package, archive it and deletes folder
     shell: "mv certs/{{ client }}.key clients/{{ client }}/. && mv certs/{{ client }}.crt clients/{{ client }}/. && cp certs/ca.crt clients/{{ client }}/." 
@@ -44,21 +50,21 @@
     args:
       chdir: "{{ openvpn_dir }}"
     tags:
-      - add-client
+      - addclient
       
   - name: Archive client configuration and certificates
     shell: "cp certs/ta.key clients/{{ client }}/."
-    when: easy_rsa_keys.tls_auth == True
+    when: easy_rsa_keys.tls_auth == True and not check_clients_config.stat.exists
     args:
       chdir: "{{ openvpn_dir }}"
     tags:
-      - add-client
+      - addclient
   
   - archive:
       path: "{{ easy_rsa_client_dir }}/{{ client }}"
       dest: "{{ easy_rsa_client_dir }}/{{ client }}/{{ client }}.tar.gz"
     when: not check_clients_config.stat.exists
     tags:
-      - add-client
+      - addclient
 
 
