@@ -12,7 +12,7 @@ script:
    - docker run -it --volumes-from ovpn_datacontainer --name openvpn_test --privileged --cap-add=NET_ADMIN sifungurx/openvpn /usr/local/bin/setup
    
    
-   - docker ps | grep sifungurx/openvpn
+   #- docker ps | grep sifungurx/openvpn
    - docker images | grep sifungurx/openvpn
    
    - docker exec -it openvpn_test  ls /usr/local/bin/setup && ls /usr/local/bin/ovpn && ls /usr/local/bin/addclient || true
