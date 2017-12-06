@@ -1,6 +1,6 @@
 FROM debian:jessie
 
-VOLUME ["/etc/openvpn/certs", "/etc/openvpn/clients"
+#VOLUME ["/etc/openvpn/certs", "/etc/openvpn/clients"
 
 RUN echo "deb http://ppa.launchpad.net/ansible/ansible/ubuntu trusty main" >> /etc/apt/sources.list.d/ansible.list && \
  apt-key adv --keyserver keyserver.ubuntu.com --recv-keys 93C4A3FD7BB9C367 && \
@@ -12,10 +12,6 @@ RUN echo "deb http://ppa.launchpad.net/ansible/ansible/ubuntu trusty main" >> /e
  # Change this line to match your own repo if forked
  git clone https://github.com/Sifungurux/ansible-openvpn-docker.git . && \ 
  ansible-playbook tests/main.yml -i 'localhost,' --connection=local --skip-tags "addclient, docker"
-
-
-#ADD scripts/setup /usr/local/bin/
-#RUN chmod 700 /usr/local/bin/setup
 
 EXPOSE 1194/tcp
 EXPOSE 1194/udp
