@@ -28,6 +28,14 @@
   tags:
     - cert_config
 
+- name: Remove PKI vars template to avoid conflict with system vars
+  file:
+    path: "{{ easy_rsa_cert_dir }}/vars"
+    state: absent
+  when: not certs_build.stat.exists
+  tags:
+    - cert_config
+
 - name: Build CA (no password)
   command: >
     {{ easy_rsa_dir }}/easyrsa
