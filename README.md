@@ -44,3 +44,33 @@ Next run/build the container
 `docker run -itd --name openvpn --privileged --cap-add=NET_ADMIN <Containner name> ovpn`
 2. Managed
 `docker run -itd --volumes-from ovpn_datacontainer --name openvpn --privileged --cap-add=NET_ADMIN <Containner name> ovpn`
+
+## Local testing with Lima
+
+Vagrant has been replaced with [Lima](https://github.com/lima-vm/lima) for local testing. Lima runs a Debian 12 (bookworm) VM on macOS (Apple Silicon and Intel) without requiring VirtualBox or Vagrant.
+
+### Prerequisites
+
+```bash
+brew install lima ansible
+```
+
+### Run the tests
+
+```bash
+# Full cycle (start VM → run role → destroy VM)
+make test
+
+# Or step by step
+make test-start   # boot Debian 12 Lima VM
+make test-run     # run ansible-openvpn-docker role against the VM
+make test-stop    # destroy the VM
+```
+
+### Build the Docker image
+
+```bash
+make docker-build
+```
+
+The Lima VM config is at `tests/lima/openvpn-test.yaml`. The Vagrantfile is kept for reference but is no longer maintained.

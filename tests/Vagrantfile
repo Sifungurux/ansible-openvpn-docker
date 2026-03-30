@@ -1,3 +1,5 @@
+# DEPRECATED: Vagrant testing has been replaced by Lima (see tests/lima/openvpn-test.yaml)
+# Use `make test-start && make test-run` instead of `vagrant up`
 Vagrant.configure("2") do |config|
   config.vm.box = "debian/jessie64"
   config.vm.define "OpenVPN" do |vpn|

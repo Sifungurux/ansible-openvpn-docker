@@ -1,0 +1,41 @@
+# Lima VM for testing the ansible-openvpn-docker role
+# Replaces the Vagrant/jessie64 setup with Debian 12 (bookworm)
+#
+# Usage:
+#   limactl start tests/lima/openvpn-test.yaml
+#   limactl shell openvpn-test
+#   limactl stop openvpn-test && limactl delete openvpn-test
+#
+# Or via Makefile:
+#   make test-start
+#   make test-run
+#   make test-stop
+
+images:
+  # Apple Silicon (M1–M4)
+  - location: "https://cloud.debian.org/images/cloud/bookworm/latest/debian-12-genericcloud-arm64.qcow2"
+    arch: aarch64
+  # Intel
+  - location: "https://cloud.debian.org/images/cloud/bookworm/latest/debian-12-genericcloud-amd64.qcow2"
+    arch: x86_64
+
+cpus: 2
+memory: "1GiB"
+disk: "10GiB"
+
+# Mount the project root read-only so Ansible can reference role files
+mounts:
+  - location: "~"
+    writable: false
+
+ssh:
+  loadDotSSHPubKeys: true
+
+# Install Python3 (required by Ansible) on first boot
+provision:
+  - mode: system
+    script: |
+      #!/bin/bash
+      set -e
+      apt-get update -qq
+      apt-get install -y -qq python3 python3-apt
