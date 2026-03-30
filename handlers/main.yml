@@ -1,7 +1,6 @@
 ---
 
-handlers:
-  - name: restart openvpn
-    service:
-      name: openvpn
-      state: restarted
+- name: restart openvpn
+  service:
+    name: openvpn
+    state: restarted
