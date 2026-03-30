@@ -1,10 +1,8 @@
-FROM debian:jessie
+FROM debian:bookworm
 
 #VOLUME ["/etc/openvpn/certs", "/etc/openvpn/clients"
 
-RUN echo "deb http://ppa.launchpad.net/ansible/ansible/ubuntu trusty main" >> /etc/apt/sources.list.d/ansible.list && \
- apt-key adv --keyserver keyserver.ubuntu.com --recv-keys 93C4A3FD7BB9C367 && \
- apt-get update && \
+RUN apt-get update && \
  apt-get -y upgrade && \
  apt-get install -y git ansible openvpn && \
  mkdir -p /etc/ansible/roles/ansible-openvpn-docker &&  \
