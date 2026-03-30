@@ -46,7 +46,7 @@ test-run: ## Run the Ansible role against the Lima VM
 	   -i "127.0.0.1," \
 	   -e "ansible_port=$$LIMA_PORT" \
 	   -e "ansible_user=$$LIMA_USER" \
-	   -e "ansible_ssh_private_key_file=$$HOME/.lima/_config/user" \
+	   -e "ansible_ssh_extra_args='-F /tmp/lima-$(LIMA_VM)-ssh.cfg'" \
 	   --skip-tags "addclient,docker"
 
 test-stop: ## Stop and delete the Lima test VM
