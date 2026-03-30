@@ -85,7 +85,9 @@
   tags:
     - install
 
-- name: Service restart
-  notify: restart openvpn
+- name: Restart openvpn service
+  service:
+    name: openvpn
+    state: restarted
   tags:
     - vm
