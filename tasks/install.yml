@@ -5,14 +5,15 @@
   include_vars:
     file: defaults/main.yml
 
-- name: Installere openvpn til sidste version
+- name: Install openvpn and easy-rsa
   apt:
-    pkg: openvpn
+    pkg:
+      - openvpn
+      - easy-rsa
     state: latest
     update_cache: yes
   tags:
     - install
-    - docker
 
 - name: Create folder
   file:
@@ -85,7 +86,9 @@
   tags:
     - install
 
-- name: Service restart
-  notify: restart openvpn
+- name: Restart openvpn service
+  service:
+    name: openvpn
+    state: restarted
   tags:
     - vm

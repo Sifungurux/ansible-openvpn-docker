@@ -1,64 +1,106 @@
 ---
+# easy-rsa v3 — Debian 12 (bookworm) ships easy-rsa 3.x
+# v3 uses a single 'easyrsa' script with subcommands instead of
+# individual scripts (pkitool, build-dh, whichopensslcnf) from v2
+
+- name: Install easy-rsa
+  apt:
+    pkg: easy-rsa
+    state: present
+  tags:
+    - cert_config
 
 - name: Certificate file check
-  stat: 
-    path: "{{ openvpn_dir }}/certs/dh{{ easy_rsa_keys.size }}.pem"
+  stat:
+    path: "{{ easy_rsa_cert_dir }}/ca.crt"
   register: certs_build
   tags:
     - cert_config
 
-- name: vars configuraion
-  template:
-    src=templates/vars.j2
-    dest="{{ easy_rsa_dir }}/vars"
+- name: Initialise PKI directory
+  command: >
+    {{ easy_rsa_dir }}/easyrsa
+    --pki-dir={{ easy_rsa_cert_dir }}
+    init-pki
+  when: not certs_build.stat.exists
+  environment:
+    EASYRSA_BATCH: "1"
   tags:
     - cert_config
 
-- name: Setting up certs folder
-  file: 
-    path: "{{ easy_rsa_cert_dir }}/index.txt"
-    owner: root
-    group: root
-    mode: 600
-    state: touch
-  when: certs_build.stat.exists == False
+- name: Remove PKI vars template to avoid conflict with system vars
+  file:
+    path: "{{ easy_rsa_cert_dir }}/vars"
+    state: absent
+  when: not certs_build.stat.exists
   tags:
     - cert_config
 
-- name: Cert serial
-  shell: "echo 01 > {{ easy_rsa_cert_dir }}/serial"
-  when: certs_build.stat.exists == False
+- name: Build CA (no password)
+  command: >
+    {{ easy_rsa_dir }}/easyrsa
+    --pki-dir={{ easy_rsa_cert_dir }}
+    build-ca nopass
+  when: not certs_build.stat.exists
+  environment:
+    EASYRSA_BATCH: "1"
+    EASYRSA_KEY_SIZE: "{{ easy_rsa_keys.size }}"
+    EASYRSA_CA_EXPIRE: "{{ easy_rsa_keys.ca_expire }}"
+    EASYRSA_CERT_EXPIRE: "{{ easy_rsa_keys.key_expire }}"
+    EASYRSA_REQ_COUNTRY: "{{ easy_rsa_keys.country }}"
+    EASYRSA_REQ_PROVINCE: "{{ easy_rsa_keys.province }}"
+    EASYRSA_REQ_CITY: "{{ easy_rsa_keys.city }}"
+    EASYRSA_REQ_ORG: "{{ easy_rsa_keys.organization }}"
+    EASYRSA_REQ_EMAIL: "{{ easy_rsa_keys.email }}"
+    EASYRSA_REQ_OU: "{{ easy_rsa_keys.organizational_unit }}"
+    EASYRSA_REQ_CN: "{{ easy_rsa_keys.common_name }}"
   tags:
     - cert_config
 
-- name: Build CA Certificate
-  shell: "source vars && {{ item }}"
-  args:
-    chdir: "{{ easy_rsa_dir }}"
-    executable: /bin/bash
-  with_items:
-    - "./pkitool --initca"
-    - "./pkitool --server {{ easy_rsa_keys.common_name }}"
-    - "./build-dh"
-  when: certs_build.stat.exists == False
+- name: Generate server key and certificate request
+  command: >
+    {{ easy_rsa_dir }}/easyrsa
+    --pki-dir={{ easy_rsa_cert_dir }}
+    gen-req {{ easy_rsa_keys.common_name }} nopass
+  when: not certs_build.stat.exists
+  environment:
+    EASYRSA_BATCH: "1"
   tags:
     - cert_config
 
-- name: Ta.key file check
-  stat: 
-    path: "{{ openvpn_dir }}/certs/ta.key"
+- name: Sign server certificate
+  command: >
+    {{ easy_rsa_dir }}/easyrsa
+    --pki-dir={{ easy_rsa_cert_dir }}
+    sign-req server {{ easy_rsa_keys.common_name }}
+  when: not certs_build.stat.exists
+  environment:
+    EASYRSA_BATCH: "1"
+  tags:
+    - cert_config
+
+- name: Generate DH parameters
+  command: >
+    {{ easy_rsa_dir }}/easyrsa
+    --pki-dir={{ easy_rsa_cert_dir }}
+    gen-dh
+  when: not certs_build.stat.exists
+  environment:
+    EASYRSA_BATCH: "1"
+  tags:
+    - cert_config
+
+- name: TLS auth key check
+  stat:
+    path: "{{ easy_rsa_cert_dir }}/ta.key"
   register: ta
   tags:
     - cert_config
 
-- name: Generate tls-auth key for added security
-  shell: openvpn --genkey --secret ta.key
-  args:
-    chdir: "{{ easy_rsa_cert_dir }}"
-    executable: /bin/bash
-  when: 
+- name: Generate tls-auth key
+  command: openvpn --genkey secret {{ easy_rsa_cert_dir }}/ta.key
+  when:
     - easy_rsa_keys.tls_auth == True
-    - ta.stat.exists == False
+    - not ta.stat.exists
   tags:
     - cert_config
-
