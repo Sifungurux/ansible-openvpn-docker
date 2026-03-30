@@ -3,10 +3,15 @@
 openvpn_dir: /etc/openvpn
 
 easy_rsa_cert_dir: "{{ openvpn_dir }}/certs"
-easy_rsa_ca_key_file: "{{ easy_rsa_cert_dir }}/ca.key"
+easy_rsa_ca_key_file: "{{ easy_rsa_cert_dir }}/private/ca.key"
 easy_rsa_ca_crt_file: "{{ easy_rsa_cert_dir }}/ca.crt"
-easy_rsa_server_key_file: "{{ easy_rsa_cert_dir }}/{{ openvpn_server_name }}.key"
-easy_rsa_server_crt_file: "{{ easy_rsa_cert_dir }}/{{ openvpn_server_name }}.crt"
+
+# easy-rsa v3 stores issued certs and private keys in subdirectories
+easy_rsa_server_key_file: "{{ easy_rsa_cert_dir }}/private/{{ easy_rsa_keys.common_name }}.key"
+easy_rsa_server_crt_file: "{{ easy_rsa_cert_dir }}/issued/{{ easy_rsa_keys.common_name }}.crt"
 easy_rsa_ta_crt_file: "{{ easy_rsa_cert_dir }}/ta.key"
-easy_rsa_dh_file: "{{ easy_rsa_cert_dir }}/dh{{dhprimes_bit}}.pem"
+
+# easy-rsa v3 generates dh.pem (not dh<size>.pem as in v2)
+easy_rsa_dh_file: "{{ easy_rsa_cert_dir }}/dh.pem"
+
 easy_rsa_client_dir: "{{ openvpn_dir }}/clients"
