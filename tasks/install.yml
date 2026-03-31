@@ -81,8 +81,9 @@
 
 - name: Server configuration file
   template:
-    src=templates/server.conf.j2
-    dest="{{ openvpn_dir }}/server.conf"
+    src: templates/server.conf.j2
+    dest: "{{ openvpn_dir }}/server.conf"
+  notify: restart openvpn
   tags:
     - install
 

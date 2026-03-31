@@ -6,7 +6,7 @@
 - name: Start openvpn server service
   service:
     name: openvpn@server
-    state: started
+    state: restarted
     enabled: true
   tags:
     - install
