@@ -2,6 +2,15 @@
 
 - include_tasks: install.yml
 - include_tasks: easy-rsa.yml
+
+- name: Start openvpn server service
+  service:
+    name: openvpn@server
+    state: started
+    enabled: true
+  tags:
+    - install
+
 - include_tasks: add_clients.yml
   tags:
     - addclient

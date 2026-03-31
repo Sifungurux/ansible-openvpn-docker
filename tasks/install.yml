@@ -86,9 +86,3 @@
   tags:
     - install
 
-- name: Restart openvpn service
-  service:
-    name: openvpn@server
-    state: restarted
-  tags:
-    - vm
