@@ -14,11 +14,11 @@
     - name: Generate client cert on server
       include_tasks: "{{ playbook_dir }}/../tasks/add_clients.yml"
 
-    - name: Set correct remote IP in client.conf (Lima eth0, not public IP)
+    - name: Set correct remote IP in client.conf (lima1 shared network for VM-to-VM)
       lineinfile:
         path: "{{ easy_rsa_client_dir }}/{{ client }}/client.conf"
         regexp: '^remote '
-        line: "remote {{ ansible_facts['eth0']['ipv4']['address'] }} {{ ovpn_port }}"
+        line: "remote {{ ansible_facts['lima1']['ipv4']['address'] }} {{ ovpn_port }}"
 
     - name: Fetch client certs and config to controller
       fetch:

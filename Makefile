@@ -54,6 +54,7 @@ test-run: ## Run the Ansible role against the Lima VM over SSH
 	@ansible-playbook $(PLAYBOOK) \
 	  -i "lima-$(LIMA_VM)," \
 	  -e "ansible_ssh_extra_args='-F $(SSH_CFG)'" \
+	  -e "local=lima" \
 	  --skip-tags "addclient,docker"
 
 test-stop: ## Stop and delete the server Lima VM
