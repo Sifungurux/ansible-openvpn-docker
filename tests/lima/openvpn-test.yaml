@@ -31,11 +31,11 @@ mounts:
 ssh:
   loadDotSSHPubKeys: true
 
-# Install Python3 (required by Ansible) on first boot
+# Install Python3 (required by Ansible on the managed node) on first boot
 provision:
   - mode: system
     script: |
       #!/bin/bash
       set -e
       apt-get update -qq
-      apt-get install -y -qq python3 python3-apt ansible
+      apt-get install -y -qq python3 python3-apt
