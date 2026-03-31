@@ -74,3 +74,60 @@ make docker-build
 ```
 
 The Lima VM config is at `tests/lima/openvpn-test.yaml`. The Vagrantfile is kept for reference but is no longer maintained.
+
+## End-to-end testing with a client VM
+
+A second Lima VM (`tests/lima/openvpn-client.yaml`) acts as an OpenVPN client and verifies the tunnel comes up against the server VM.
+
+```bash
+# Start server VM and configure it first
+make test-start
+make test-run
+
+# Then run the client cycle
+make client-start   # boot Debian 12 client VM
+make client-run     # generate client cert, distribute certs, start tunnel, assert ping
+make client-stop    # destroy client VM
+
+# Or the full end-to-end cycle in one command
+make test-e2e
+```
+
+### Prerequisites for end-to-end testing
+
+VM-to-VM networking requires `socket_vmnet`. Install and start it once:
+
+```bash
+brew install socket_vmnet
+sudo launchctl load /opt/homebrew/Cellar/socket_vmnet/1.2.2/share/doc/socket_vmnet/launchd/io.github.lima-vm.socket_vmnet.plist
+```
+
+Both Lima VM configs use `networks: [{lima: shared}]` which relies on `socket_vmnet` being available.
+
+## Troubleshooting
+
+### tun0 does not come up
+
+**Symptom:** `Timeout when waiting for file /sys/class/net/tun0`
+
+Check the OpenVPN client log — it is printed automatically by the `client-run` playbook. Common causes:
+
+**Client connecting to public IP instead of Lima IP**
+The `client.conf` template can resolve to the server's public IP via `ansible_local.server.remote_ip`. The test playbook patches the `remote` line using `lineinfile` with `ansible_facts['eth0']['ipv4']['address']`. If you see the wrong IP in the log, verify the server VM's eth0:
+```bash
+limactl shell openvpn-test -- ip -4 addr show eth0
+```
+
+**Both VMs have the same IP (ECONNREFUSED)**
+Lima's default `vzNAT` gives each VM an isolated NAT — VMs cannot reach each other and both get `192.168.5.15`. Fix: install and start `socket_vmnet` (see prerequisites above), then recreate the VMs with `make test-stop && make test-start`.
+
+**OpenVPN server not running on server VM**
+On Debian 12 the service is `openvpn@server`, not `openvpn`. Verify:
+```bash
+limactl shell openvpn-test -- systemctl status openvpn@server
+# Start manually if needed:
+limactl shell openvpn-test -- sudo systemctl start openvpn@server
+```
+
+**Wrong service name caused by stale server run**
+If `make test-run` was executed before the `openvpn@server` fix, the service was never started. Run `make test-run` again after the fix to apply the corrected `install.yml`.
