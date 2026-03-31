@@ -28,12 +28,18 @@
         - "{{ easy_rsa_client_dir }}/{{ client }}/ta.key"
         - "{{ easy_rsa_client_dir }}/{{ client }}/client.conf"
 
-# Play 2: Copy certs and config to client VM
+# Play 2: Install OpenVPN, copy certs and config to client VM
 - hosts: vpn_client
   become: true
   vars:
     client: testclient
   tasks:
+    - name: Install openvpn
+      apt:
+        pkg: openvpn
+        state: present
+        update_cache: true
+
     - name: Create client cert directory
       file:
         path: /etc/openvpn/client
