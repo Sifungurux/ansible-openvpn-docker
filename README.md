@@ -102,7 +102,7 @@ brew install socket_vmnet
 sudo launchctl load /opt/homebrew/Cellar/socket_vmnet/1.2.2/share/doc/socket_vmnet/launchd/io.github.lima-vm.socket_vmnet.plist
 ```
 
-Both Lima VM configs use `networks: [{lima: shared}]` which relies on `socket_vmnet` being available.
+Both Lima VM configs use `vzNAT` (for internet access) plus `lima: shared` (for VM-to-VM). The `lima: shared` network relies on `socket_vmnet` being available.
 
 ## Troubleshooting
 
@@ -119,7 +119,7 @@ limactl shell openvpn-test -- ip -4 addr show eth0
 ```
 
 **Both VMs have the same IP (ECONNREFUSED)**
-Lima's default `vzNAT` gives each VM an isolated NAT — VMs cannot reach each other and both get `192.168.5.15`. Fix: install and start `socket_vmnet` (see prerequisites above), then recreate the VMs with `make test-stop && make test-start`.
+Lima's default `vzNAT` gives each VM an isolated NAT — VMs cannot reach each other and both get `192.168.5.15`. The Lima configs use both `vzNAT: true` (internet) and `lima: shared` (VM-to-VM). Fix: start `socket_vmnet` (see prerequisites above), then recreate the VMs with `make test-stop && make client-stop && make test-start`.
 
 **OpenVPN server not running on server VM**
 On Debian 12 the service is `openvpn@server`, not `openvpn`. Verify:

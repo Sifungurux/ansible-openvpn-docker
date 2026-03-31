@@ -29,6 +29,7 @@ mounts:
     writable: false
 
 networks:
+  - vzNAT: true
   - lima: shared
 
 ssh:
