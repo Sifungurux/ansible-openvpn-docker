@@ -1,0 +1,53 @@
+---
+# Play 1: Generate client cert on server and fetch files to controller
+- hosts: vpn_server
+  become: true
+  vars:
+    client: testclient
+    # local: true makes client.conf use the server's own Lima IP
+    local: true
+  tasks:
+    - name: Include role defaults and vars
+      include_vars: "{{ item }}"
+      loop:
+        - "{{ playbook_dir }}/../defaults/main.yml"
+        - "{{ playbook_dir }}/../vars/main.yml"
+
+    - name: Generate client cert and config on server
+      include_tasks: "{{ playbook_dir }}/../tasks/add_clients.yml"
+
+    - name: Fetch client certs and config to controller
+      fetch:
+        src: "{{ item }}"
+        dest: "/tmp/openvpn-{{ client }}/"
+        flat: true
+      loop:
+        - "{{ easy_rsa_client_dir }}/{{ client }}/{{ client }}.crt"
+        - "{{ easy_rsa_client_dir }}/{{ client }}/{{ client }}.key"
+        - "{{ easy_rsa_client_dir }}/{{ client }}/ca.crt"
+        - "{{ easy_rsa_client_dir }}/{{ client }}/ta.key"
+        - "{{ easy_rsa_client_dir }}/{{ client }}/client.conf"
+
+# Play 2: Copy certs and config to client VM
+- hosts: vpn_client
+  become: true
+  vars:
+    client: testclient
+  tasks:
+    - name: Create client cert directory
+      file:
+        path: /etc/openvpn/client
+        state: directory
+        mode: 0700
+
+    - name: Copy client certs and config
+      copy:
+        src: "/tmp/openvpn-{{ client }}/{{ item.name }}"
+        dest: "/etc/openvpn/client/{{ item.dest }}"
+        mode: "{{ item.mode }}"
+      loop:
+        - { name: "ca.crt",           dest: "ca.crt",           mode: "0644" }
+        - { name: "{{ client }}.crt", dest: "{{ client }}.crt", mode: "0644" }
+        - { name: "{{ client }}.key", dest: "{{ client }}.key", mode: "0600" }
+        - { name: "ta.key",           dest: "ta.key",           mode: "0600" }
+        - { name: "client.conf",      dest: "client.conf",      mode: "0600" }
