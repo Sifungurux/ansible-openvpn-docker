@@ -1,70 +1,78 @@
 ---
-  
-  - name: Include default variables
-    include_vars:
-          file: ../defaults/main.yml
-    tags:
-      - addclient
- 
-  - name: Include vars variables
-    include_vars:
-          file: ../vars/main.yml
-    tags:
-      - addclient
 
-  - name: Checking for client configs
-    stat:
-      path: "{{ openvpn_dir }}/clients/{{ client }}/{{ client }}.tar.gz"
-    register: check_clients_config
-    tags:
-      - addclient
-  
-  - name: Create client folder
-    file:
-      path: "{{ openvpn_dir }}/clients/{{ client }}"
-      state: directory
-      mode: 0700
-    tags:
-      - addclient  
-  
-  - name: Generate client certification
-    shell: "source vars && ./pkitool {{ client }}"
-    when: not check_clients_config.stat.exists
-    args:
-      chdir: "{{ easy_rsa_dir }}"     
-      executable: /bin/bash
-    tags:
-      - addclient
-  
-  - name: Generate client configuration
-    template:
-      src=../templates/client.conf.j2
-      dest="{{ easy_rsa_client_dir }}/{{ client }}/client.conf"
-    when: not check_clients_config.stat.exists
-    tags:
-      - addclient
-      
-  - name: Create client openvpn zip package, archive it and deletes folder
-    shell: "mv certs/{{ client }}.key clients/{{ client }}/. && mv certs/{{ client }}.crt clients/{{ client }}/. && cp certs/ca.crt clients/{{ client }}/." 
-    when: not check_clients_config.stat.exists
-    args:
-      chdir: "{{ openvpn_dir }}"
-    tags:
-      - addclient
-      
-  - name: Archive client configuration and certificates
-    shell: "cp certs/ta.key clients/{{ client }}/."
-    when: easy_rsa_keys.tls_auth == True and not check_clients_config.stat.exists
-    args:
-      chdir: "{{ openvpn_dir }}"
-    tags:
-      - addclient
-  
-  - archive:
-      path: "{{ easy_rsa_client_dir }}/{{ client }}"
-      dest: "{{ easy_rsa_client_dir }}/{{ client }}/{{ client }}.tar.gz"
-    when: not check_clients_config.stat.exists
-    tags:
-      - addclient
+- name: Check for existing client config
+  stat:
+    path: "{{ easy_rsa_client_dir }}/{{ client }}/{{ client }}.tar.gz"
+  register: check_clients_config
+  tags:
+    - addclient
 
+- name: Create client folder
+  file:
+    path: "{{ easy_rsa_client_dir }}/{{ client }}"
+    state: directory
+    mode: 0700
+  tags:
+    - addclient
 
+- name: Generate client key and certificate request
+  command: >
+    {{ easy_rsa_dir }}/easyrsa
+    --pki-dir={{ easy_rsa_cert_dir }}
+    gen-req {{ client }} nopass
+  when: not check_clients_config.stat.exists
+  environment:
+    EASYRSA_BATCH: "1"
+  tags:
+    - addclient
+
+- name: Sign client certificate
+  command: >
+    {{ easy_rsa_dir }}/easyrsa
+    --pki-dir={{ easy_rsa_cert_dir }}
+    sign-req client {{ client }}
+  when: not check_clients_config.stat.exists
+  environment:
+    EASYRSA_BATCH: "1"
+  tags:
+    - addclient
+
+- name: Generate client configuration
+  template:
+    src: "{{ playbook_dir }}/../templates/client.conf.j2"
+    dest: "{{ easy_rsa_client_dir }}/{{ client }}/client.conf"
+  when: not check_clients_config.stat.exists
+  tags:
+    - addclient
+
+- name: Collect client certificates and keys
+  copy:
+    src: "{{ item.src }}"
+    dest: "{{ easy_rsa_client_dir }}/{{ client }}/"
+    remote_src: true
+  loop:
+    - { src: "{{ easy_rsa_cert_dir }}/issued/{{ client }}.crt" }
+    - { src: "{{ easy_rsa_cert_dir }}/private/{{ client }}.key" }
+    - { src: "{{ easy_rsa_cert_dir }}/ca.crt" }
+  when: not check_clients_config.stat.exists
+  tags:
+    - addclient
+
+- name: Collect tls-auth key
+  copy:
+    src: "{{ easy_rsa_cert_dir }}/ta.key"
+    dest: "{{ easy_rsa_client_dir }}/{{ client }}/"
+    remote_src: true
+  when:
+    - easy_rsa_keys.tls_auth == True
+    - not check_clients_config.stat.exists
+  tags:
+    - addclient
+
+- name: Archive client configuration and certificates
+  archive:
+    path: "{{ easy_rsa_client_dir }}/{{ client }}"
+    dest: "{{ easy_rsa_client_dir }}/{{ client }}/{{ client }}.tar.gz"
+  when: not check_clients_config.stat.exists
+  tags:
+    - addclient

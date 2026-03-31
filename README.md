@@ -47,25 +47,63 @@ Next run/build the container
 
 ## Local testing with Lima
 
-Vagrant has been replaced with [Lima](https://github.com/lima-vm/lima) for local testing. Lima runs a Debian 12 (bookworm) VM on macOS (Apple Silicon and Intel) without requiring VirtualBox or Vagrant.
+Vagrant has been replaced with [Lima](https://github.com/lima-vm/lima) for local testing. Lima runs a Debian 12 (bookworm) VM on macOS (Apple Silicon and Intel) without requiring VirtualBox or Vagrant. Ansible runs from the macOS host and connects to the VM over SSH — the VM is just a managed node.
+
+### How it works
+
+```
+macOS host
+├── ansible-playbook (runs here)
+│   └── SSH → lima-openvpn-test (Debian 12, 192.168.5.15 / 192.168.105.x)
+│               ├── installs openvpn + easy-rsa
+│               ├── builds PKI (CA, server cert, DH params, ta.key)
+│               └── starts openvpn@server
+└── SSH → lima-openvpn-client (Debian 12, 192.168.105.y)
+            ├── installs openvpn
+            ├── receives client cert/key/config from server via Ansible fetch
+            └── connects to server → tun0 up → ping 192.168.30.1 ✓
+```
+
+Lima generates an SSH config per VM (`limactl show-ssh <vm> --format config`). The Makefile writes both configs into a single temp file and passes it to Ansible via `ansible_ssh_extra_args='-F /tmp/...'` so both VMs are reachable without manual SSH setup.
 
 ### Prerequisites
 
 ```bash
-brew install lima ansible
+brew install lima ansible socket_vmnet
+sudo brew services start socket_vmnet   # required for VM-to-VM networking
 ```
 
 ### Run the tests
 
 ```bash
-# Full cycle (start VM → run role → destroy VM)
-make test
+# Server-only (installs role, starts OpenVPN)
+make test-start   # boot Debian 12 server VM
+make test-run     # configure server, build PKI, start openvpn@server
+make test-stop    # destroy server VM
 
-# Or step by step
-make test-start   # boot Debian 12 Lima VM
-make test-run     # run ansible-openvpn-docker role against the VM
-make test-stop    # destroy the VM
+# End-to-end tunnel test
+make test-start && make test-run        # configure server first
+make client-start                       # boot Debian 12 client VM
+make client-run                         # generate client cert on server,
+                                        # distribute certs to client,
+                                        # start OpenVPN client,
+                                        # assert tun0 up + ping 192.168.30.1
+make client-stop                        # destroy client VM
+
+# Full cycle in one command
+make test-e2e
 ```
+
+### Networking
+
+Each Lima VM gets two network interfaces:
+
+| Interface | Network | Purpose |
+|---|---|---|
+| `eth0` | `192.168.5.x` | vzNAT — outbound internet (apt, etc.) |
+| `lima1` | `192.168.105.x` | socket_vmnet shared — VM-to-VM |
+
+The OpenVPN server binds to all interfaces (`0.0.0.0:1194`) and the client connects via `lima1`. The VPN tunnel itself uses `192.168.30.0/28` (configurable in `defaults/main.yml`).
 
 ### Build the Docker image
 
@@ -73,4 +111,69 @@ make test-stop    # destroy the VM
 make docker-build
 ```
 
-The Lima VM config is at `tests/lima/openvpn-test.yaml`. The Vagrantfile is kept for reference but is no longer maintained.
+## Troubleshooting
+
+### socket_vmnet not running — VMs get the same IP
+
+**Symptom:** Both VMs show `192.168.5.15`, client gets `ECONNREFUSED`
+
+Lima's default `vzNAT` isolates each VM behind its own NAT. VM-to-VM communication requires `socket_vmnet` to be running so the shared `lima1` interface gets a unique IP per VM.
+
+```bash
+# Check if socket is present
+ls /var/run/lima/socket_vmnet.shared && echo "running" || echo "not running"
+
+# Start it
+sudo brew services start socket_vmnet
+
+# Then recreate both VMs
+make test-stop && make client-stop
+make test-start && make test-run
+make client-start && make client-run
+```
+
+### tun0 does not come up
+
+**Symptom:** `Timeout when waiting for file /sys/class/net/tun0`
+
+The OpenVPN client log is printed automatically. Check the remote IP being used:
+
+```bash
+# Should show 192.168.105.x, not a public IP
+limactl shell openvpn-client -- cat /etc/openvpn/client/client.conf | grep ^remote
+```
+
+If the IP is wrong, the `lineinfile` task that patches `client.conf` may not have run. Re-run `make client-run`.
+
+### OpenVPN server not listening / ECONNREFUSED on correct IP
+
+**Symptom:** Log shows correct `192.168.105.x:1194` but still `ECONNREFUSED`
+
+```bash
+# Check server is listening on 0.0.0.0 (not just eth0)
+limactl shell openvpn-test -- sudo ss -ulnp | grep 1194
+
+# Check service is active
+limactl shell openvpn-test -- systemctl status openvpn@server
+
+# Restart if needed
+limactl shell openvpn-test -- sudo systemctl restart openvpn@server
+```
+
+The service is `openvpn@server` (not `openvpn`) on Debian 12. The server binds to `0.0.0.0` so it accepts connections on all interfaces including `lima1`.
+
+### Ping fails but tun0 is up
+
+**Symptom:** tun0 comes up but `ping 192.168.30.1` fails
+
+Check IP forwarding is enabled on the server VM:
+
+```bash
+limactl shell openvpn-test -- cat /proc/sys/net/ipv4/ip_forward
+# Should be 1 — set via /etc/sysctl.d/99-openvpn.conf at provision time
+```
+
+If `0`, enable it manually:
+```bash
+limactl shell openvpn-test -- sudo sysctl -w net.ipv4.ip_forward=1
+```

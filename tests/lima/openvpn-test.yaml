@@ -28,10 +28,15 @@ mounts:
   - location: "~"
     writable: false
 
+networks:
+  - vzNAT: true
+  - lima: shared
+
 ssh:
   loadDotSSHPubKeys: true
 
 # Install Python3 (required by Ansible on the managed node) on first boot
+# Enable IP forwarding so OpenVPN can route traffic through the tunnel
 provision:
   - mode: system
     script: |
@@ -39,3 +44,6 @@ provision:
       set -e
       apt-get update -qq
       apt-get install -y -qq python3 python3-apt
+      # IP forwarding — required for OpenVPN to route client traffic
+      echo 'net.ipv4.ip_forward=1' > /etc/sysctl.d/99-openvpn.conf
+      sysctl -p /etc/sysctl.d/99-openvpn.conf

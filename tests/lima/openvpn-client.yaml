@@ -1,0 +1,39 @@
+# Lima VM acting as an OpenVPN client for end-to-end tunnel testing
+#
+# Usage:
+#   limactl start tests/lima/openvpn-client.yaml
+#   limactl shell openvpn-client
+#   limactl stop openvpn-client && limactl delete openvpn-client
+#
+# Or via Makefile:
+#   make client-start
+#   make client-run
+#   make client-stop
+
+images:
+  # Apple Silicon (M1–M4)
+  - location: "https://cloud.debian.org/images/cloud/bookworm/latest/debian-12-genericcloud-arm64.qcow2"
+    arch: aarch64
+  # Intel
+  - location: "https://cloud.debian.org/images/cloud/bookworm/latest/debian-12-genericcloud-amd64.qcow2"
+    arch: x86_64
+
+cpus: 1
+memory: "512MiB"
+disk: "5GiB"
+
+networks:
+  - vzNAT: true
+  - lima: shared
+
+ssh:
+  loadDotSSHPubKeys: true
+
+# Install Python3 (required by Ansible on the managed node) on first boot
+provision:
+  - mode: system
+    script: |
+      #!/bin/bash
+      set -e
+      apt-get update -qq
+      apt-get install -y -qq python3 python3-apt

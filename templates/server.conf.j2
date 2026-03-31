@@ -1,6 +1,6 @@
-{% if local != true %}
+{% if local == false %}
 local {{ ansible_facts['eth0']['ipv4']['address'] }}
-{% else  %}
+{% elif local == true %}
 local {{ remote_ip }}
 {% endif %}
 port {{ ovpn_port }}

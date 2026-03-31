@@ -8,7 +8,7 @@ proto {{ proto }}
 {% if local == false %}
 remote {{ ansible_local.server.remote_ip }} {{ ovpn_port }}
 {% elif local == true %}
-remote {{ ansible_default_ipv4.address }} {{ ovpn_port }}
+remote {{ ansible_facts['default_ipv4']['address'] }} {{ ovpn_port }}
 {% else %}
 remote {{ remote_server }} {{ ovpn_port }}
 {% endif %}

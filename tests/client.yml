@@ -1,0 +1,118 @@
+---
+# Play 1: Generate client cert on server and fetch files to controller
+- hosts: vpn_server
+  become: true
+  vars:
+    client: testclient
+  tasks:
+    - name: Include role defaults and vars
+      include_vars: "{{ item }}"
+      loop:
+        - "{{ playbook_dir }}/../defaults/main.yml"
+        - "{{ playbook_dir }}/../vars/main.yml"
+
+    - name: Generate client cert on server
+      include_tasks: "{{ playbook_dir }}/../tasks/add_clients.yml"
+
+    - name: Set correct remote IP in client.conf (lima1 shared network for VM-to-VM)
+      lineinfile:
+        path: "{{ easy_rsa_client_dir }}/{{ client }}/client.conf"
+        regexp: '^remote '
+        line: "remote {{ ansible_facts['lima1']['ipv4']['address'] }} {{ ovpn_port }}"
+
+    - name: Fetch client certs and config to controller
+      fetch:
+        src: "{{ item }}"
+        dest: "/tmp/openvpn-{{ client }}/"
+        flat: true
+      loop:
+        - "{{ easy_rsa_client_dir }}/{{ client }}/{{ client }}.crt"
+        - "{{ easy_rsa_client_dir }}/{{ client }}/{{ client }}.key"
+        - "{{ easy_rsa_client_dir }}/{{ client }}/ca.crt"
+        - "{{ easy_rsa_client_dir }}/{{ client }}/ta.key"
+        - "{{ easy_rsa_client_dir }}/{{ client }}/client.conf"
+
+# Play 2: Install OpenVPN, copy certs and config to client VM
+- hosts: vpn_client
+  become: true
+  vars:
+    client: testclient
+    vpn_server_tun_ip: "192.168.30.1"  # server tun0 — first IP of vpn_network in defaults/main.yml
+  tasks:
+    - name: Install openvpn
+      apt:
+        pkg: openvpn
+        state: present
+        update_cache: true
+
+    - name: Create client cert directory
+      file:
+        path: /etc/openvpn/client
+        state: directory
+        mode: 0700
+
+    - name: Copy client certs and config
+      copy:
+        src: "/tmp/openvpn-{{ client }}/{{ item.name }}"
+        dest: "/etc/openvpn/client/{{ item.dest }}"
+        mode: "{{ item.mode }}"
+      loop:
+        - { name: "ca.crt",           dest: "ca.crt",           mode: "0644" }
+        - { name: "{{ client }}.crt", dest: "{{ client }}.crt", mode: "0644" }
+        - { name: "{{ client }}.key", dest: "{{ client }}.key", mode: "0600" }
+        - { name: "ta.key",           dest: "ta.key",           mode: "0600" }
+        - { name: "client.conf",      dest: "client.conf",      mode: "0600" }
+
+    - name: Check TUN device is available
+      stat:
+        path: /dev/net/tun
+      register: tun_dev
+
+    - name: Fail if TUN device is missing
+      fail:
+        msg: "/dev/net/tun not available in this Lima VM — TUN kernel module may not be loaded"
+      when: not tun_dev.stat.exists
+
+    - name: Stop any existing OpenVPN process
+      command: pkill openvpn
+      failed_when: false
+      changed_when: false
+
+    - name: Start OpenVPN client
+      command: >
+        openvpn
+        --config /etc/openvpn/client/client.conf
+        --cd /etc/openvpn/client
+        --daemon
+        --log /tmp/openvpn-client.log
+
+    - name: Wait for tun0 interface to come up
+      wait_for:
+        path: /sys/class/net/tun0
+        timeout: 30
+      register: tun_wait
+      ignore_errors: true
+
+    - name: Show OpenVPN client log
+      command: cat /tmp/openvpn-client.log
+      register: openvpn_log
+      changed_when: false
+
+    - name: OpenVPN client log output
+      debug:
+        msg: "{{ openvpn_log.stdout_lines }}"
+
+    - name: Fail if tun0 did not come up
+      fail:
+        msg: "tun0 did not appear within 30s — see OpenVPN log above"
+      when: tun_wait is failed
+
+    - name: Ping VPN server through tunnel
+      command: "ping -c 3 -W 2 {{ vpn_server_tun_ip }}"
+      register: ping_result
+      changed_when: false
+
+    - name: Tunnel assertion result
+      debug:
+        msg: "Tunnel is UP — ping to {{ vpn_server_tun_ip }} succeeded"
+      when: ping_result.rc == 0
