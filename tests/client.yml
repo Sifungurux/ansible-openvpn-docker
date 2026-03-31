@@ -4,8 +4,6 @@
   become: true
   vars:
     client: testclient
-    # local: true makes client.conf use the server's own Lima IP
-    local: true
   tasks:
     - name: Include role defaults and vars
       include_vars: "{{ item }}"
@@ -13,12 +11,17 @@
         - "{{ playbook_dir }}/../defaults/main.yml"
         - "{{ playbook_dir }}/../vars/main.yml"
 
-    - name: Set local to true so client.conf uses server Lima IP
-      set_fact:
-        local: true
-
-    - name: Generate client cert and config on server
+    - name: Generate client cert on server
       include_tasks: "{{ playbook_dir }}/../tasks/add_clients.yml"
+
+    - name: Regenerate client.conf with server Lima IP
+      template:
+        src: "{{ playbook_dir }}/../templates/client.conf.j2"
+        dest: "{{ easy_rsa_client_dir }}/{{ client }}/client.conf"
+      vars:
+        # Use eth0 explicitly — default_ipv4 resolves to the public IP on Lima
+        remote_server: "{{ ansible_facts['eth0']['ipv4']['address'] }}"
+        local: "lima"
 
     - name: Fetch client certs and config to controller
       fetch:
