@@ -13,6 +13,10 @@
         - "{{ playbook_dir }}/../defaults/main.yml"
         - "{{ playbook_dir }}/../vars/main.yml"
 
+    - name: Set local to true so client.conf uses server Lima IP
+      set_fact:
+        local: true
+
     - name: Generate client cert and config on server
       include_tasks: "{{ playbook_dir }}/../tasks/add_clients.yml"
 
