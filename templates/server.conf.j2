@@ -1,20 +1,20 @@
 {% if local != true %}
-local {{ ansible_eth0.ipv4.address }}
+local {{ ansible_facts['eth0']['ipv4']['address'] }}
 {% else  %}
 local {{ remote_ip }}
 {% endif %}
 port {{ ovpn_port }}
 proto {{ proto }}
 dev {{ connection_proto }}
-{%- if ansible_os_family == "Windows" -%}
+{%- if ansible_facts['os_family'] == "Windows" -%}
 dev-node MyTap
 {%- endif %}
 
-ca {{ easy_rsa_cert_dir}}/ca.crt
-cert {{ easy_rsa_cert_dir }}/{{ easy_rsa_keys.common_name }}.crt
-key {{ easy_rsa_cert_dir }}/{{ easy_rsa_keys.common_name }}.key  # This file should be kept secret
+ca {{ easy_rsa_cert_dir }}/ca.crt
+cert {{ easy_rsa_server_crt_file }}
+key {{ easy_rsa_server_key_file }}  # This file should be kept secret
 
-dh {{ easy_rsa_cert_dir }}/dh1024.pem
+dh {{ easy_rsa_dh_file }}
 {% if server_bridge %}
 server-bridge 10.8.0.4 255.255.255.0 10.8.0.50 10.8.0.100
 {% else %}
