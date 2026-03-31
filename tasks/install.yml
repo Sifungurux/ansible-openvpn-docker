@@ -88,7 +88,7 @@
 
 - name: Restart openvpn service
   service:
-    name: openvpn
+    name: openvpn@server
     state: restarted
   tags:
     - vm
