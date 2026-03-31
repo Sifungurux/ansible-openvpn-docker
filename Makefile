@@ -16,6 +16,7 @@ SHELL := /usr/bin/env bash
 LIMA_VM      := openvpn-test
 LIMA_CONFIG  := tests/lima/$(LIMA_VM).yaml
 PLAYBOOK     := tests/main.yml
+SSH_CFG      := /tmp/lima-$(LIMA_VM)-ssh.cfg
 
 GREEN := \033[0;32m
 CYAN  := \033[0;36m
@@ -36,14 +37,14 @@ test-start: ## Start the Lima test VM (Debian 12)
 	@limactl start $(LIMA_CONFIG)
 	@echo -e "$(GREEN)[test]$(NC) VM ready."
 
-test-run: ## Run the Ansible role against the Lima VM (runs playbook inside VM via limactl shell)
-	@echo -e "$(GREEN)[test]$(NC) Running playbook inside Lima VM '$(LIMA_VM)'..."
-	@limactl shell $(LIMA_VM) -- sudo bash -c \
-	  "cd /Users/$(shell whoami)/development/ansible-openvpn-docker && \
-	   ansible-playbook $(PLAYBOOK) \
-	     -i 'localhost,' \
-	     --connection=local \
-	     --skip-tags 'addclient,docker'"
+test-run: ## Run the Ansible role against the Lima VM over SSH
+	@echo -e "$(GREEN)[test]$(NC) Generating SSH config for Lima VM '$(LIMA_VM)'..."
+	@limactl show-ssh $(LIMA_VM) --format config > $(SSH_CFG)
+	@echo -e "$(GREEN)[test]$(NC) Running playbook against Lima VM '$(LIMA_VM)' over SSH..."
+	@ansible-playbook $(PLAYBOOK) \
+	  -i "lima-$(LIMA_VM)," \
+	  -e "ansible_ssh_extra_args='-F $(SSH_CFG)'" \
+	  --skip-tags "addclient,docker"
 
 test-stop: ## Stop and delete the Lima test VM
 	@echo -e "$(GREEN)[test]$(NC) Stopping Lima VM '$(LIMA_VM)'..."
