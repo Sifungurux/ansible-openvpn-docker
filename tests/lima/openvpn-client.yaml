@@ -22,6 +22,9 @@ cpus: 1
 memory: "512MiB"
 disk: "5GiB"
 
+networks:
+  - lima: shared
+
 ssh:
   loadDotSSHPubKeys: true
 

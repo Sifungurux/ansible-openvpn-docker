@@ -28,6 +28,9 @@ mounts:
   - location: "~"
     writable: false
 
+networks:
+  - lima: shared
+
 ssh:
   loadDotSSHPubKeys: true
 
