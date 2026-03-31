@@ -37,6 +37,7 @@
   become: true
   vars:
     client: testclient
+    vpn_server_tun_ip: "192.168.30.1"  # server tun0 — first IP of vpn_network in defaults/main.yml
   tasks:
     - name: Install openvpn
       apt:
@@ -107,11 +108,11 @@
       when: tun_wait is failed
 
     - name: Ping VPN server through tunnel
-      command: ping -c 3 -W 2 10.8.0.1
+      command: "ping -c 3 -W 2 {{ vpn_server_tun_ip }}"
       register: ping_result
       changed_when: false
 
     - name: Tunnel assertion result
       debug:
-        msg: "Tunnel is UP — ping to 10.8.0.1 succeeded"
+        msg: "Tunnel is UP — ping to {{ vpn_server_tun_ip }} succeeded"
       when: ping_result.rc == 0
