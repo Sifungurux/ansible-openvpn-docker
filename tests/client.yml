@@ -58,6 +58,16 @@
         - { name: "ta.key",           dest: "ta.key",           mode: "0600" }
         - { name: "client.conf",      dest: "client.conf",      mode: "0600" }
 
+    - name: Check TUN device is available
+      stat:
+        path: /dev/net/tun
+      register: tun_dev
+
+    - name: Fail if TUN device is missing
+      fail:
+        msg: "/dev/net/tun not available in this Lima VM — TUN kernel module may not be loaded"
+      when: not tun_dev.stat.exists
+
     - name: Start OpenVPN client
       command: >
         openvpn
@@ -70,6 +80,22 @@
       wait_for:
         path: /sys/class/net/tun0
         timeout: 30
+      register: tun_wait
+      ignore_errors: true
+
+    - name: Show OpenVPN client log
+      command: cat /tmp/openvpn-client.log
+      register: openvpn_log
+      changed_when: false
+
+    - name: OpenVPN client log output
+      debug:
+        msg: "{{ openvpn_log.stdout_lines }}"
+
+    - name: Fail if tun0 did not come up
+      fail:
+        msg: "tun0 did not appear within 30s — see OpenVPN log above"
+      when: tun_wait is failed
 
     - name: Ping VPN server through tunnel
       command: ping -c 3 -W 2 10.8.0.1
