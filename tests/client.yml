@@ -14,14 +14,11 @@
     - name: Generate client cert on server
       include_tasks: "{{ playbook_dir }}/../tasks/add_clients.yml"
 
-    - name: Regenerate client.conf with server Lima IP
-      template:
-        src: "{{ playbook_dir }}/../templates/client.conf.j2"
-        dest: "{{ easy_rsa_client_dir }}/{{ client }}/client.conf"
-      vars:
-        # Use eth0 explicitly — default_ipv4 resolves to the public IP on Lima
-        remote_server: "{{ ansible_facts['eth0']['ipv4']['address'] }}"
-        local: "lima"
+    - name: Set correct remote IP in client.conf (Lima eth0, not public IP)
+      lineinfile:
+        path: "{{ easy_rsa_client_dir }}/{{ client }}/client.conf"
+        regexp: '^remote '
+        line: "remote {{ ansible_facts['eth0']['ipv4']['address'] }} {{ ovpn_port }}"
 
     - name: Fetch client certs and config to controller
       fetch:
@@ -74,6 +71,11 @@
       fail:
         msg: "/dev/net/tun not available in this Lima VM — TUN kernel module may not be loaded"
       when: not tun_dev.stat.exists
+
+    - name: Stop any existing OpenVPN process
+      command: pkill openvpn
+      failed_when: false
+      changed_when: false
 
     - name: Start OpenVPN client
       command: >
