@@ -57,3 +57,26 @@
         - { name: "{{ client }}.key", dest: "{{ client }}.key", mode: "0600" }
         - { name: "ta.key",           dest: "ta.key",           mode: "0600" }
         - { name: "client.conf",      dest: "client.conf",      mode: "0600" }
+
+    - name: Start OpenVPN client
+      command: >
+        openvpn
+        --config /etc/openvpn/client/client.conf
+        --cd /etc/openvpn/client
+        --daemon
+        --log /tmp/openvpn-client.log
+
+    - name: Wait for tun0 interface to come up
+      wait_for:
+        path: /sys/class/net/tun0
+        timeout: 30
+
+    - name: Ping VPN server through tunnel
+      command: ping -c 3 -W 2 10.8.0.1
+      register: ping_result
+      changed_when: false
+
+    - name: Tunnel assertion result
+      debug:
+        msg: "Tunnel is UP — ping to 10.8.0.1 succeeded"
+      when: ping_result.rc == 0

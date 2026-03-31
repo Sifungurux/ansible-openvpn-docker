@@ -8,7 +8,8 @@
 #   make client-start    Start the client Lima VM
 #   make client-run      Generate client cert on server, push to client VM
 #   make client-stop     Stop and delete the client Lima VM
-#   make test            Full cycle: start → run → stop
+#   make test            Server-only test cycle: start → run → stop
+#   make test-e2e        Full end-to-end cycle: server + client + tunnel assert
 #   make docker-build    Build the Docker image (standalone mode)
 # ──────────────────────────────────────────────────────────────────────────────
 
@@ -31,7 +32,7 @@ GREEN := \033[0;32m
 CYAN  := \033[0;36m
 NC    := \033[0m
 
-.PHONY: help test-start test-run test-stop client-start client-run client-stop test docker-build
+.PHONY: help test-start test-run test-stop client-start client-run client-stop test test-e2e docker-build
 
 help: ## Show available targets
 	@echo ""
@@ -84,7 +85,9 @@ client-stop: ## Stop and delete the client Lima VM
 	@rm -f $(CLIENT_SSH_CFG) $(CLIENT_INV) /tmp/openvpn-testclient
 	@echo -e "$(GREEN)[client]$(NC) VM removed."
 
-test: test-start test-run test-stop ## Full server test cycle: start → run → stop
+test: test-start test-run test-stop ## Server-only test cycle: start → run → stop
+
+test-e2e: test-start test-run client-start client-run client-stop test-stop ## Full end-to-end cycle: server + client + tunnel assertion
 
 docker-build: ## Build the Docker image
 	@docker build -t openvpn -f tests/Dockerfile .
