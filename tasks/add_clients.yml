@@ -39,7 +39,7 @@
 
 - name: Generate client configuration
   template:
-    src: templates/client.conf.j2
+    src: "{{ playbook_dir }}/../templates/client.conf.j2"
     dest: "{{ easy_rsa_client_dir }}/{{ client }}/client.conf"
   when: not check_clients_config.stat.exists
   tags:
