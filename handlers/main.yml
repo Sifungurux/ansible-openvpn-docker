@@ -4,3 +4,4 @@
   service:
     name: openvpn@server
     state: restarted
+  when: local != 'container'

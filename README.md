@@ -111,6 +111,74 @@ The OpenVPN server binds to all interfaces (`0.0.0.0:1194`) and the client conne
 make docker-build
 ```
 
+## Testing with Docker
+
+You can test the full server + client flow using two Docker containers on a shared bridge network.
+
+### Build and start the server
+
+```bash
+make docker-build
+docker network create vpn-test
+docker run -d --name openvpn-server --cap-add=NET_ADMIN --network vpn-test -p 1194:1194/udp openvpn
+```
+
+### Generate a client certificate
+
+```bash
+docker exec openvpn-server ansible-playbook \
+  /etc/ansible/roles/ansible-openvpn-docker/tests/main.yml \
+  -i 'localhost,' --connection=local --tags "addclient" \
+  -e "client=testclient" -e "local=container" \
+  -e "remote_server=$(docker inspect openvpn-server --format '{{range .NetworkSettings.Networks}}{{.IPAddress}} {{end}}' | awk '{print $NF}')"
+```
+
+### Extract the client bundle
+
+```bash
+docker cp openvpn-server:/etc/openvpn/clients/testclient/testclient.tar.gz /tmp/
+mkdir -p ~/testclient && tar -xzf /tmp/testclient.tar.gz -C ~/testclient
+```
+
+### Build and run the client container
+
+Create `~/testclient/Dockerfile`:
+
+```dockerfile
+FROM openvpn
+COPY . /vpn/
+CMD ["bash", "-c", "mkdir -p /dev/net && [ ! -c /dev/net/tun ] && mknod /dev/net/tun c 10 200; cd /vpn && openvpn --config client.conf"]
+```
+
+Update the remote address and connect:
+
+```bash
+SERVER_IP=$(docker inspect openvpn-server --format '{{(index .NetworkSettings.Networks "vpn-test").IPAddress}}')
+sed -i "s/^remote .*/remote $SERVER_IP 1194/" ~/testclient/client.conf
+
+docker build -t openvpn-client ~/testclient/
+docker run --rm --cap-add=NET_ADMIN --network vpn-test openvpn-client
+```
+
+### Expected output
+
+```
+[VPN] Peer Connection Initiated with [AF_INET]<server_ip>:1194
+TUN/TAP device tun0 opened
+net_addr_ptp_v4_add: 192.168.30.6 peer 192.168.30.5 dev tun0
+Initialization Sequence Completed
+```
+
+The client receives a VPN IP in the `192.168.30.0/28` range and the tunnel is up.
+
+### Clean up
+
+```bash
+docker stop openvpn-server
+docker network rm vpn-test
+docker rmi openvpn-client
+```
+
 ## Troubleshooting
 
 ### socket_vmnet not running — VMs get the same IP
